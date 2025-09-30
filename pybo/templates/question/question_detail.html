@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-3">
+    <!--flash오류-->
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-danger">
+        {{ message }}
+    </div>
+    {% endfor %}
+    <!--질문 내용-->
+    <h2 class="border-bottom py-2">{{ question.subject }}</h2>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text">
+                {{ question.content }}
+            </div>
+            <!--첨부 이미지-->
+            {% if question.image_path %}
+            <div class="my-3">
+                <img src="{{ url_for('static', filename=question.image_path) }}" alt="첨부 이미지"
+                    style="max-width:100%; height: auto" class="img-thumbnail">
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-end">
+                {% if question.modify_date %}
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <p class="mb-2">modified at</p>
+                    <p class="mb-2">{{ question.modify_date|datetime }}</p>
+                </div>
+                {% endif %}
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <p class="mb-2">{{ question.user.username }}</p>
+                    <p class="mb-2">{{ question.create_date|datetime }}</p>
+                </div>
+            </div>
+            <div class="my-3">
+                {% if g.user == question.user %}
+                <a href="{{ url_for('question.modify', question_id=question.id) }}"
+                   class="btn btn-sm btn-outline-secondary">수정</a>
+                <button class="btn btn-sm btn-outline-danger delete"
+                    data-uri="{{ url_for('question.delete', question_id=question.id) }}">삭제</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!--답변 내용-->
+    <h5 class="border-bottom my-3 py-2">{{ question.answer_set|length }}개의 답변이 있습니다.</h5>
+    {% for answer in question.answer_set %}
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text">{{ answer.content }}</div>
+            <div class="d-flex justify-content-end">
+                {% if answer.modify_date %}
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <p class="mb-2">modified at</p>
+                    <p class="mb-2">{{ answer.modify_date|datetime }}</p>
+                </div>
+                {% endif %}
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <p class="mb-2">{{ answer.user.username }}</p>
+                    <p class="mb-2">{{ answer.create_date|datetime }}</p>
+                </div>
+            </div>
+            <div class="my-3">
+                {% if g.user == answer.user %}
+                <a href="{{ url_for('answer.modify', answer_id=answer.id) }}"
+                   class="btn btn-sm btn-outline-secondary">수정</a>
+                <button class="btn btn-sm btn-outline-danger delete"
+                    data-uri="{{ url_for('answer.delete', answer_id=answer.id) }}">삭제</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!--답변등록-->
+    <form action="{{ url_for('answer.create', question_id=question.id) }}" method="post">
+        {% include 'form_errors.html' %}
+        <textarea class="form-control" name="content" id="content" rows="5"
+            {% if not g.user %} disabled {% endif %}></textarea>
+        <button type="submit" class="btn btn-primary mt-3"
+            {% if not g.user %} disabled {% endif %}>답변등록</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const delete_elements = document.querySelectorAll('.delete');
+    delete_elements.forEach(function(element){
+        element.addEventListener('click', function(){
+            if(confirm('정말로 삭제하시겠습니까?')){
+                location.href = this.dataset.uri;
+            }
+        });
+    });
+</script>
+{% endblock %}

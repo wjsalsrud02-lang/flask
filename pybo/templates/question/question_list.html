@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-3">
+    <!--검색기능 추가-->
+    <div class="row my-3">
+        <div class="col-6">
+            <a href="{{ url_for('question.create') }}" class="btn btn-primary">질문 등록하기</a>
+        </div>
+        <div class="col-6">
+            <div class="input-group">
+                <input type="text" id="search_kw" class="form-control"
+                    value="{{ kw or '' }}">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" id="btn_search">찾기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+        <tr class="table-dark">
+            <th scope="col">번호</th>
+            <th scope="col">제목</th>
+            <th scope="col">글쓴이</th>
+            <th scope="col">작성일시</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if question_list %}
+        {% for question in question_list.items %}
+        <tr>
+            <td>{{ question_list.total - (question_list.page - 1) * question_list.per_page - loop.index0 }}</td>
+            <td>
+                {% if question.image_path %}
+                <img src="{{ url_for('static', filename=question.image_path) }}" alt="썸네일" style="width:50px;">
+                {% endif %}
+                <a href="{{ url_for('question.detail', question_id= question.id) }}">{{ question.subject }}</a>
+                {% if question.answer_set | length > 0 %}
+                <span class="text-danger small"> [{{question.answer_set | length}}]</span>
+                {% endif %}
+            </td>
+            <td>{{ question.user.username }}</td>
+            <td>{{ question.create_date|datetime }}</td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="3">질문이 없습니다.</td>
+        </tr>
+        {% endif %}
+        </tbody>
+    </table>
+
+    <!--페이징 처리-->
+    <ul class="pagination justify-content-center">
+        <!--이전버튼-->
+        {% if question_list.has_prev %}
+        <li class="page-item"><a data-page="{{ question_list.prev_num }}" href="javascript:void(0)" class="page-link">이전</a></li>
+        {% else %}
+        <li class="page-item disabled"><a href="javascript:void(0)" class="page-link">이전</a></li>
+        {% endif %}
+
+        <!--페이지 번호-->
+        {% for page_num in question_list.iter_pages() %}
+        {% if page_num %}
+        {% if page_num != question_list.page %}
+        <li class="page-item"><a class="page-link" data-page="{{ page_num }}" href="javascript:void(0)">{{ page_num }}</a></li>
+        {%else%}
+        <li class="page-item active">
+            <a class="page-link" href="javascript:void(0)" aria-current="page">{{ page_num }}</a>
+        </li>
+        {% endif %}
+        {% else %}
+        <li class="page-item disabled"><a class="page-link" href="javascript:void(0)">...</a></li>
+        {% endif %}
+        {% endfor %}
+
+        <!--다음버튼-->
+        {% if question_list.has_next %}
+        <li class="page-item"><a data-page="{{ question_list.next_num }}" href="javascript:void(0)" class="page-link">다음</a></li>
+        {% else %}
+        <li class="page-item disabled"><a href="javascript:void(0)" class="page-link">다음</a></li>
+        {% endif %}
+    </ul>
+
+    <form action="{{ url_for('question._list') }}" method="get" id="searchForm">
+        <input type="hidden" name="kw" id="kw" value="{{ kw or '' }}">
+        <input type="hidden" name="page" id="page" value="{{ page }}">
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // 페이지 버튼 클릭시 동작
+    const page_elements = document.querySelectorAll('.page-link');
+    page_elements.forEach(element => {
+        element.addEventListener('click', function() {
+            document.getElementById('page').value = this.dataset.page;
+            document.getElementById('searchForm').submit();
+        });
+    });
+
+   // 검색 버튼 클릭시 동작
+    const btn_search = document.getElementById('btn_search');
+    btn_search.addEventListener('click', function() {
+        document.getElementById('kw').value = document.getElementById('search_kw').value
+        document.getElementById('page').value = 1;
+        document.getElementById('searchForm').submit();
+    })
+</script>
+{% endblock %}
